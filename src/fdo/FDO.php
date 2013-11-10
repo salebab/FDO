@@ -1,16 +1,15 @@
 <?php
+
+namespace fdo;
+
 /**
- * Created by PhpStorm.
- * User: Sasa
- * Date: 10.11.13.
- * Time: 02.52
+ * FDO - Facebook Data Object
  */
-
-namespace library\facebook;
-
-
 class FDO
 {
+    /**
+     * Facebook's Graph API url
+     */
     const API_URL = "https://graph.facebook.com/fql?q=";
 
     protected $statement;
@@ -21,7 +20,7 @@ class FDO
     }
 
     /**
-     * Executes an FQL statement, returning a result set as a FDOStatement object
+     * Executes a FQL statement, returning a result set as a FDOStatement object
      * @param string $statement
      * @return FDO
      */
@@ -33,9 +32,12 @@ class FDO
     /**
      * Prepares a statement for execution and returns a statement object
      * @param $statement
+     * @return FDOStatement
      */
     function prepare($statement)
     {
         $this->statement = $statement;
+
+        return new FDOStatement($this, $this->statement);
     }
 } 

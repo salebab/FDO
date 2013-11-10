@@ -6,7 +6,7 @@
  * Time: 03.18
  */
 
-namespace library\facebook;
+namespace fdo;
 
 
 class FDOException extends \Exception {
