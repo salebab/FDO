@@ -9,6 +9,4 @@
 namespace fdo;
 
 
-class FDOException extends \Exception {
-
-} 
+class FDOException extends \Exception {} 

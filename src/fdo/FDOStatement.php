@@ -80,27 +80,20 @@ class FDOStatement
         \curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         \curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         \curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        \curl_setopt($ch, CURLOPT_VERBOSE, 1);
-        \curl_setopt($ch, CURLOPT_HEADER, 1);
 
-        if(false === ($response = \curl_exec($ch))) {
+        if(false === ($data = \curl_exec($ch))) {
             $exception = new FDOException('Curl error: ' . \curl_error($ch), \curl_errno($ch));
             \curl_close($ch);
             throw $exception;
         }
 
-        $header_size = \curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $header = substr($response, 0, $header_size);
-        $body = substr($response, $header_size);
-
-        \curl_close($ch);
-
-        $statusLine = strtok($header, "\n");
-
-        if(strpos($statusLine, "200 OK") === false) {
-            throw new FDOException($statusLine);
+        $contentType = \curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+        
+        if(strpos($contentType, "application/json") === false) {
+            $exception = new FDOException("Invalid content type ($contentType).");
+            \curl_close($ch);
+            throw $exception;
         }
-
-        return $body;
+        return $data;
     }
 }
