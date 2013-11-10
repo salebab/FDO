@@ -12,7 +12,10 @@ while($object = $stmt->fetch()) {
 	var_dump($object);
 }
 
-$fql = "SELECT uid, name FROM user WHERE uid = 4";
-$stmt = $fdo->query($fql);
-$stmt->setFetchMode(FDO::FETCH_JSON);
+$fql = "SELECT uid, name FROM user WHERE uid = :uid";
+$stmt = $fdo->prepare($fql);
+
+$stmt->bindParam(":uid", 5, FDO::PARAM_INT);
+$stmt->setFetchMode(FDO::FETCH_OBJ);
+$stmt->execute();
 var_dump($stmt->fetch());

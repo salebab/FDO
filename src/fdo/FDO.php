@@ -12,6 +12,11 @@ class FDO
      */
     const API_URL = "https://graph.facebook.com/fql?q=";
 
+    const PARAM_BOOL = 0;
+    const PARAM_INT = 1;
+    const PARAM_STR = 2;
+
+
     const FETCH_JSON = 0;
     const FETCH_ASSOC = 1;
     const FETCH_CLASS = 2;
@@ -19,8 +24,6 @@ class FDO
     const FETCH_OBJ = 4;
 
     CONST ATTR_DEFAULT_FETCH_MODE = 1;
-
-    protected $statement;
 
     protected $attr = array(
         self::ATTR_DEFAULT_FETCH_MODE => self::FETCH_ASSOC
@@ -43,8 +46,20 @@ class FDO
      */
     function query($statement)
     {
-        $stmt = new FDOStatement($this, $statement);
+        $stmt = $this->prepare($statement);
         $stmt->execute();
+        return $stmt;
+    }
+
+    /**
+     * @param string $queryString
+     * @return FDOStatement
+     */ 
+    private function createStatement($queryString)
+    {
+        $stmt = new FDOStatement($this);
+        $stmt->queryString = $queryString;
+
         return $stmt;
     }
 
@@ -55,9 +70,7 @@ class FDO
      */
     function prepare($statement)
     {
-        $this->statement = $statement;
-
-        return new FDOStatement($this, $this->statement);
+        return $this->createStatement($statement);
     }
 
     function setAttribute($attribute, $value)
@@ -72,5 +85,28 @@ class FDO
         } else {
             return 0;
         }
+    }
+
+    function quote($string, $type = FDO::PARAM_STR)
+    {
+        switch ($type) {
+            case FDO::PARAM_BOOL:
+                $string = (bool) $string;
+                $string = ($string) ? "true" : "false";
+                $result = "'". $string ."'";
+                break;            
+
+            case FDO::PARAM_INT:
+                $string = (int) $string;
+                $result = $string;
+                break;
+
+            case FDO::PARAM_STR:
+            default:
+                $string = (string) $string;
+                $result =  "'". str_replace("'", "\'", $string) ."'";
+                break;
+        }
+        return $result;
     }
 } 

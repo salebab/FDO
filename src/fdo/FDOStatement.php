@@ -7,10 +7,22 @@ class FDOStatement implements \Iterator
 
     /**
      * 
+     * @var string
+     */
+    public $queryString;
+
+    /**
+     * 
+     * @var string
+     */ 
+    private $preparedQueryString;
+
+    /**
      * @var array
      */
     protected $result;
-    protected $statement;
+    protected $public;
+    protected $params;
 
 
     /**
@@ -22,18 +34,17 @@ class FDOStatement implements \Iterator
 
     private $mode;
 
-    function __construct(FDO $fdo, $statement = "")
+    function __construct(FDO $fdo)
     {
         $this->fdo = $fdo;
-        $this->statement = $statement;
-        $this->mode = $fdo->getAttribute(FDO::ATTR_DEFAULT_FETCH_MODE);
+        $this->mode = $this->fdo->getAttribute(FDO::ATTR_DEFAULT_FETCH_MODE);
     }
 
     function execute()
     {
         $this->rewind();
 
-        $api = FDO::API_URL . $this->getQuery();
+        $api = FDO::API_URL . urlencode($this->getPreparedQueryString());
         $this->result = $this->getResultSet($api);
 
         if(property_exists($this->result, "error")) {
@@ -43,6 +54,9 @@ class FDOStatement implements \Iterator
         if(!property_exists($this->result, "data")) {
             throw new FDOException("There is no data object in result set");
         }
+
+        // reset statement
+        $this->setPreparedQueryString($this->queryString);
     }
 
     function setFetchMode($mode)
@@ -71,13 +85,6 @@ class FDOStatement implements \Iterator
     {
 
     }
-
-    private function getQuery()
-    {
-        // TODO: build statement
-        return urlencode($this->statement);
-    }
-
 
     /**
      * @param $url
@@ -140,5 +147,34 @@ class FDOStatement implements \Iterator
 
     function valid() {
         return isset($this->result->data[$this->position]);
+    }
+
+    function bindParam($parameter, $variable, $data_type = FDO::PARAM_STR)
+    {
+        if(substr($parameter, 0, 1) !== ":") {
+            $parameter = ":". $parameter;
+        }
+
+        $queryString = $this->getPreparedQueryString();
+
+        if(strpos($queryString, $parameter) === false) {
+            throw new FDOException("Parameter $parameter not found in the statement.");
+        }
+
+        $variable = $this->fdo->quote($variable, $data_type);
+        $queryString = str_replace($parameter, $variable, $queryString);
+        echo $queryString;
+        $this->setPreparedQueryString($queryString);
+    }
+
+    private function getPreparedQueryString()
+    {
+        return !empty($this->preparedQueryString) ? $this->preparedQueryString : $this->setPreparedQueryString($this->queryString);
+    }
+
+    private function setPreparedQueryString($queryString)
+    {
+        $this->preparedQueryString = $queryString;
+        return $this->preparedQueryString;
     }
 }
