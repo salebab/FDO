@@ -64,8 +64,10 @@ class FDOStatement implements \Iterator
         $this->mode = $mode;
     }
 
-    function fetch()
+    function fetch($mode = null)
     {
+        $this->setFetchMode($mode);
+
         if($this->valid()) {
             $result = $this->current();
             $this->next();
@@ -81,9 +83,20 @@ class FDOStatement implements \Iterator
         return $this->result->data;
     }
 
-    function fetchObject()
+    function fetchObject($className = "stdClass", $constructorArgs = array())
     {
+        if($className == "stdClass") {
+            return $this->fetch(FDO::FETCH_OBJ);
+        }
 
+        $reflection = new \ReflectionClass($className);
+        $object = $reflection->newInstanceArgs($constructorArgs);
+
+        foreach($this->fetch(FDO::FETCH_ASSOC) as $name => $value) {
+            $object->{$name} = $value;
+        }
+
+        return $object;
     }
 
     /**
@@ -176,5 +189,10 @@ class FDOStatement implements \Iterator
     {
         $this->preparedQueryString = $queryString;
         return $this->preparedQueryString;
+    }
+
+    public function rowCount()
+    {
+        return count($this->result->data);
     }
 }
