@@ -2,10 +2,14 @@
 
 namespace fdo;
 
-class FDOStatement
+class FDOStatement implements \Iterator
 {
 
-    protected $data;
+    /**
+     * 
+     * @var array
+     */
+    protected $result;
     protected $statement;
 
 
@@ -14,46 +18,53 @@ class FDOStatement
      */
     protected $fdo;
 
-    private $cursor = 0;
+    private $position = 0;
+
+    private $mode;
 
     function __construct(FDO $fdo, $statement = "")
     {
         $this->fdo = $fdo;
         $this->statement = $statement;
+        $this->mode = $fdo->getAttribute(FDO::ATTR_DEFAULT_FETCH_MODE);
     }
 
     function execute()
     {
-        $api = FDO::API_URL . $this->getQuery();
-        $this->data = json_decode($this->getData($api));
+        $this->rewind();
 
-        if(property_exists($this->data, "error")) {
-            throw new FDOException($this->data->error->message, $this->data->error->code);
+        $api = FDO::API_URL . $this->getQuery();
+        $this->result = $this->getResultSet($api);
+
+        if(property_exists($this->result, "error")) {
+            throw new FDOException($this->result->error->message, $this->result->error->code);
         }
 
-        if(!property_exists($this->data, "data")) {
+        if(!property_exists($this->result, "data")) {
             throw new FDOException("There is no data object in result set");
         }
+    }
 
-        $this->cursor = 0;
+    function setFetchMode($mode)
+    {
+        $this->mode = $mode;
     }
 
     function fetch()
     {
-        if(array_key_exists($this->cursor, $this->data->data)) {
-            $row = $this->data->data[$this->cursor];
+        if($this->valid()) {
+            $result = $this->current();
+            $this->next();
         } else {
-            $row = null;
+            $result = null;
         }
 
-        $this->cursor +=1;
-        
-        return $row;
+        return $result;
     }
 
     function fetchAll()
     {
-        return $this->data->data;
+        return $this->result->data;
     }
 
     function fetchObject()
@@ -73,7 +84,7 @@ class FDOStatement
      * @return mixed
      * @throws FDOException
      */
-    private function getData($url)
+    private function getResultSet($url)
     {
         $ch = \curl_init();
         \curl_setopt($ch, CURLOPT_URL, $url);
@@ -94,6 +105,40 @@ class FDOStatement
             \curl_close($ch);
             throw $exception;
         }
-        return $data;
+
+        return json_decode($data);
+    }
+
+    function rewind() {
+        $this->position = 0;
+    }
+
+    function current() {
+        $data = $this->result->data[$this->position];
+
+        switch ($this->mode) {
+            case FDO::FETCH_OBJ:
+                return (object) $data;
+                break;
+            
+            case FDO::FETCH_JSON:
+                return json_encode($data);
+                break;
+
+            default:
+                return (array) $data;
+        }
+    }
+
+    function key() {
+        return $this->position;
+    }
+
+    function next() {
+        ++$this->position;
+    }
+
+    function valid() {
+        return isset($this->result->data[$this->position]);
     }
 }
