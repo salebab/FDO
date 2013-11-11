@@ -70,26 +70,39 @@ class FDOStatement implements \Iterator
      * @param int $data_type
      * @throws FDOException
      */
-    function bindParam($parameter, $variable, $data_type = FDO::PARAM_STR)
+    function bindParam($parameter, &$variable, $data_type = FDO::PARAM_STR)
     {
-        if(substr($parameter, 0, 1) !== ":") {
-            $parameter = ":". $parameter;
-        }
-
-        $queryString = $this->getPreparedQueryString();
-
-        if(strpos($queryString, $parameter) === false) {
-            throw new FDOException("Parameter $parameter not found in the statement.");
-        }
-
-        $variable = $this->fdo->quote($variable, $data_type);
-        $queryString = str_replace($parameter, $variable, $queryString);
-        $this->setPreparedQueryString($queryString);
+        throw new FDOException(__METHOD__ ." is not yet supported. Please contribute.");
     }
 
-    function bindValue()
+    /**
+     * Binds a value to a parameter
+     *
+     * @param int|string $parameter
+     * @param $value
+     * @param int $data_type
+     * @throws FDOException
+     */
+    function bindValue($parameter, $value, $data_type = FDO::PARAM_STR)
     {
-        throw new FDOException("Not yet implemented");
+        $queryString = $this->getPreparedQueryString();
+        $value = $this->fdo->quote($value, $data_type);
+
+        if(is_string($parameter)) {
+            if(substr($parameter, 0, 1) !== ":") {
+                $parameter = ":". $parameter;
+            }
+            // check if exists
+            if(strpos($queryString, $parameter) === false) {
+                throw new FDOException("Parameter $parameter not found in the statement.");
+            }
+            $queryString = str_replace($parameter, $value, $queryString);
+        }
+        elseif(is_int($parameter)) {
+            throw new FDOException("Question marks are not yet supported. Please contribute.");
+        }
+
+        $this->setPreparedQueryString($queryString);
     }
 
     /**

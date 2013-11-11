@@ -18,7 +18,7 @@ echo PHP_EOL;
 
 $fql = "SELECT uid, name FROM user WHERE uid = :me OR uid IN (SELECT uid2 FROM friend WHERE uid1 = :me) ORDER BY name";
 $stmt = $fdo->prepare($fql);
-$stmt->bindParam(":me", "me()", FDO::PARAM_FUNC);
+$stmt->bindValue(":me", "me()", FDO::PARAM_FUNC);
 $stmt->execute();
 
 echo "Friends:". PHP_EOL;

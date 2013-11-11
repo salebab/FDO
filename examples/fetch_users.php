@@ -10,7 +10,7 @@ $fdo = new FDO();
 
 $fql = "SELECT uid, name, sex FROM user WHERE uid = :uid";
 $stmt = $fdo->prepare($fql);
-$stmt->bindParam(":uid", 4, FDO::PARAM_INT);
+$stmt->bindValue(":uid", 4, FDO::PARAM_INT);
 $stmt->execute();
 $result = $stmt->fetch(FDO::FETCH_OBJ);
 
