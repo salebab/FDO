@@ -50,6 +50,16 @@ class FDO
     }
 
     /**
+     * Prepares a statement for execution and returns a statement object
+     * @param $statement
+     * @return FDOStatement
+     */
+    function prepare($statement)
+    {
+        return $this->createStatement($statement);
+    }
+
+    /**
      * Executes a FQL statement, returning a result set as a FDOStatement object
      * @param string $statement
      * @return FDOStatement
@@ -62,25 +72,31 @@ class FDO
     }
 
     /**
-     * @param string $queryString
-     * @return FDOStatement
-     */ 
-    private function createStatement($queryString)
-    {
-        $stmt = new FDOStatement($this);
-        $stmt->queryString = $queryString;
-
-        return $stmt;
-    }
-
-    /**
-     * Prepares a statement for execution and returns a statement object
-     * @param $statement
-     * @return FDOStatement
+     * @param $string
+     * @param int $type
+     * @return int|string
      */
-    function prepare($statement)
+    function quote($string, $type = FDO::PARAM_STR)
     {
-        return $this->createStatement($statement);
+        switch ($type) {
+            case FDO::PARAM_BOOL:
+                $string = (bool) $string;
+                $string = ($string) ? "true" : "false";
+                $result = "'". $string ."'";
+                break;
+
+            case FDO::PARAM_INT:
+                $string = (int) $string;
+                $result = $string;
+                break;
+
+            case FDO::PARAM_STR:
+            default:
+                $string = (string) $string;
+                $result =  "'". str_replace("'", "\'", $string) ."'";
+                break;
+        }
+        return $result;
     }
 
     /**
@@ -106,30 +122,14 @@ class FDO
     }
 
     /**
-     * @param $string
-     * @param int $type
-     * @return int|string
+     * @param string $queryString
+     * @return FDOStatement
      */
-    function quote($string, $type = FDO::PARAM_STR)
+    private function createStatement($queryString)
     {
-        switch ($type) {
-            case FDO::PARAM_BOOL:
-                $string = (bool) $string;
-                $string = ($string) ? "true" : "false";
-                $result = "'". $string ."'";
-                break;            
+        $stmt = new FDOStatement($this);
+        $stmt->queryString = $queryString;
 
-            case FDO::PARAM_INT:
-                $string = (int) $string;
-                $result = $string;
-                break;
-
-            case FDO::PARAM_STR:
-            default:
-                $string = (string) $string;
-                $result =  "'". str_replace("'", "\'", $string) ."'";
-                break;
-        }
-        return $result;
+        return $stmt;
     }
-} 
+}

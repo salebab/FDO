@@ -19,7 +19,7 @@ class FDOStatement implements \Iterator
      * Copy of $queryString, used for binding and processing
      * $queryString is untouched
      * @var string
-     */ 
+     */
     private $preparedQueryString;
 
     /**
@@ -51,6 +51,51 @@ class FDOStatement implements \Iterator
         $this->mode = $this->fdo->getAttribute(FDO::ATTR_DEFAULT_FETCH_MODE);
     }
 
+    function bindColumn()
+    {
+        throw new FDOException("Not yet implemented");
+    }
+
+    /**
+     * Binds a parameter to the specified variable name
+     *
+     * @param string $parameter
+     * @param mixed $variable
+     * @param int $data_type
+     * @throws FDOException
+     */
+    function bindParam($parameter, $variable, $data_type = FDO::PARAM_STR)
+    {
+        if(substr($parameter, 0, 1) !== ":") {
+            $parameter = ":". $parameter;
+        }
+
+        $queryString = $this->getPreparedQueryString();
+
+        if(strpos($queryString, $parameter) === false) {
+            throw new FDOException("Parameter $parameter not found in the statement.");
+        }
+
+        $variable = $this->fdo->quote($variable, $data_type);
+        $queryString = str_replace($parameter, $variable, $queryString);
+        $this->setPreparedQueryString($queryString);
+    }
+
+    function bindValue()
+    {
+        throw new FDOException("Not yet implemented");
+    }
+
+    /**
+     * Returns the number of columns in the result set
+     *
+     * @return int
+     */
+    function columnCount()
+    {
+        return $this->valid() ? count($this->current()) : 0;
+    }
+
     /**
      * Executes a prepared statement
      *
@@ -73,16 +118,6 @@ class FDOStatement implements \Iterator
 
         // reset statement
         $this->setPreparedQueryString($this->queryString);
-    }
-
-    /**
-     * Set the default fetch mode for this statement
-     *
-     * @param int $mode
-     */
-    function setFetchMode($mode)
-    {
-        $this->mode = $mode;
     }
 
     /**
@@ -120,6 +155,15 @@ class FDOStatement implements \Iterator
     }
 
     /**
+     * TODO: implement
+     * @throws FDOException
+     */
+    function fetchColumn()
+    {
+        throw new FDOException("Not yet implemented");
+    }
+
+    /**
      * Fetches the next row and returns it as an object.
      *
      * @param string $className
@@ -143,12 +187,21 @@ class FDOStatement implements \Iterator
     }
 
     /**
-     * TODO: implement
-     * @throws FDOException
+     * Set the default fetch mode for this statement
+     *
+     * @param int $mode
      */
-    function fetchColumn()
+    function setFetchMode($mode)
     {
-        throw new FDOException("Not yet implemented");
+        $this->mode = $mode;
+    }
+
+    /**
+     * @return int
+     */
+    public function rowCount()
+    {
+        return count($this->result->data);
     }
 
     /**
@@ -173,7 +226,7 @@ class FDOStatement implements \Iterator
         }
 
         $contentType = \curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-        
+
         if(strpos($contentType, "application/json") === false) {
             $exception = new FDOException("Invalid content type ($contentType).");
             \curl_close($ch);
@@ -194,7 +247,7 @@ class FDOStatement implements \Iterator
             case FDO::FETCH_OBJ:
                 return (object) $data;
                 break;
-            
+
             case FDO::FETCH_JSON:
                 return json_encode($data);
                 break;
@@ -217,31 +270,6 @@ class FDOStatement implements \Iterator
     }
 
     /**
-     * Binds a parameter to the specified variable name
-     *
-     * @param string $parameter
-     * @param mixed $variable
-     * @param int $data_type
-     * @throws FDOException
-     */
-    function bindParam($parameter, $variable, $data_type = FDO::PARAM_STR)
-    {
-        if(substr($parameter, 0, 1) !== ":") {
-            $parameter = ":". $parameter;
-        }
-
-        $queryString = $this->getPreparedQueryString();
-
-        if(strpos($queryString, $parameter) === false) {
-            throw new FDOException("Parameter $parameter not found in the statement.");
-        }
-
-        $variable = $this->fdo->quote($variable, $data_type);
-        $queryString = str_replace($parameter, $variable, $queryString);
-        $this->setPreparedQueryString($queryString);
-    }
-
-    /**
      * @return string
      */
     private function getPreparedQueryString()
@@ -257,13 +285,5 @@ class FDOStatement implements \Iterator
     {
         $this->preparedQueryString = $queryString;
         return $this->preparedQueryString;
-    }
-
-    /**
-     * @return int
-     */
-    public function rowCount()
-    {
-        return count($this->result->data);
     }
 }
