@@ -3,7 +3,7 @@ FDO - Facebook Data Object
 
 The _**Facebook Data Object**_ (FDO) is a simple interface for querying data from Facebook Graph API using **FQL (Facebook Query Language)**. It uses CURL for querying.
 
-_FDO interface is very similar to PDO, since PDO has a very understandable methods and majority of PHP developers are very familiarly with them._
+_FDO interface is very similar to PDO, since PDO has a very understandable methods and majority of PHP developers are very familiar with them._
 Examples
 --------
 
