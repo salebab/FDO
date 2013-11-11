@@ -1,9 +1,14 @@
 <?php
-
+/**
+ * FDO - Facebook Data Object
+ */
 namespace fdo;
 
 /**
  * FDO - Facebook Data Object
+ *
+ * @author Aleksandar Babic <salebab@gmail.com>
+ * @package fdo
  */
 class FDO
 {
@@ -16,19 +21,25 @@ class FDO
     const PARAM_INT = 1;
     const PARAM_STR = 2;
 
-
     const FETCH_JSON = 0;
     const FETCH_ASSOC = 1;
     const FETCH_CLASS = 2;
     const FETCH_INTO = 3;
     const FETCH_OBJ = 4;
 
-    CONST ATTR_DEFAULT_FETCH_MODE = 1;
+    const ATTR_DEFAULT_FETCH_MODE = 1;
 
-    protected $attr = array(
+    /**
+     * @var array
+     */
+    private $attr = array(
         self::ATTR_DEFAULT_FETCH_MODE => self::FETCH_ASSOC
     );
 
+    /**
+     * @param string|null $access_token
+     * @param array $attributes
+     */
     function __construct($access_token = null, $attributes = array())
     {
         $this->access_token = $access_token;
@@ -36,7 +47,6 @@ class FDO
         if(!empty($attributes)) {
             $this->attr = array_merge($this->attr, $attributes);
         }
-
     }
 
     /**
@@ -73,11 +83,19 @@ class FDO
         return $this->createStatement($statement);
     }
 
+    /**
+     * @param $attribute
+     * @param $value
+     */
     function setAttribute($attribute, $value)
     {
         $this->attr[$attribute] = $value;
     }
 
+    /**
+     * @param $attribute
+     * @return int
+     */
     function getAttribute($attribute)
     {
         if(array_key_exists($attribute, $this->attr)) {
@@ -87,6 +105,11 @@ class FDO
         }
     }
 
+    /**
+     * @param $string
+     * @param int $type
+     * @return int|string
+     */
     function quote($string, $type = FDO::PARAM_STR)
     {
         switch ($type) {

@@ -2,44 +2,60 @@
 
 namespace fdo;
 
+/**
+ * Class FDOStatement
+ *
+ * @author Aleksandar Babic <salebab@gmail.com>
+ * @package fdo
+ */
 class FDOStatement implements \Iterator
 {
-
     /**
-     * 
      * @var string
      */
     public $queryString;
 
     /**
-     * 
+     * Copy of $queryString, used for binding and processing
+     * $queryString is untouched
      * @var string
      */ 
     private $preparedQueryString;
 
     /**
-     * @var array
+     * @var \stdClass
      */
     protected $result;
-    protected $public;
-    protected $params;
-
 
     /**
      * @var FDO
      */
     protected $fdo;
 
+    /**
+     * @var int
+     */
     private $position = 0;
 
+    /**
+     * @var int
+     */
     private $mode;
 
+    /**
+     * @param FDO $fdo
+     */
     function __construct(FDO $fdo)
     {
         $this->fdo = $fdo;
         $this->mode = $this->fdo->getAttribute(FDO::ATTR_DEFAULT_FETCH_MODE);
     }
 
+    /**
+     * Executes a prepared statement
+     *
+     * @throws FDOException
+     */
     function execute()
     {
         $this->rewind();
@@ -59,14 +75,27 @@ class FDOStatement implements \Iterator
         $this->setPreparedQueryString($this->queryString);
     }
 
+    /**
+     * Set the default fetch mode for this statement
+     *
+     * @param int $mode
+     */
     function setFetchMode($mode)
     {
         $this->mode = $mode;
     }
 
+    /**
+     * Fetches the next row from a result set
+     *
+     * @param int|null $mode
+     * @return mixed
+     */
     function fetch($mode = null)
     {
-        $this->setFetchMode($mode);
+        if($mode !== null) {
+            $this->setFetchMode($mode);
+        }
 
         if($this->valid()) {
             $result = $this->current();
@@ -78,11 +107,25 @@ class FDOStatement implements \Iterator
         return $result;
     }
 
+    /**
+     * Returns an array containing all of the result set rows
+     *
+     * TODO: implement fetch style
+     *
+     * @return mixed
+     */
     function fetchAll()
     {
         return $this->result->data;
     }
 
+    /**
+     * Fetches the next row and returns it as an object.
+     *
+     * @param string $className
+     * @param array $constructorArgs
+     * @return mixed|object
+     */
     function fetchObject($className = "stdClass", $constructorArgs = array())
     {
         if($className == "stdClass") {
@@ -100,8 +143,19 @@ class FDOStatement implements \Iterator
     }
 
     /**
-     * @param $url
-     * @return mixed
+     * TODO: implement
+     * @throws FDOException
+     */
+    function fetchColumn()
+    {
+        throw new FDOException("Not yet implemented");
+    }
+
+    /**
+     * Get a result set from Facebook by API URL
+     *
+     * @param string $url
+     * @return \stdClass
      * @throws FDOException
      */
     private function getResultSet($url)
@@ -162,6 +216,14 @@ class FDOStatement implements \Iterator
         return isset($this->result->data[$this->position]);
     }
 
+    /**
+     * Binds a parameter to the specified variable name
+     *
+     * @param string $parameter
+     * @param mixed $variable
+     * @param int $data_type
+     * @throws FDOException
+     */
     function bindParam($parameter, $variable, $data_type = FDO::PARAM_STR)
     {
         if(substr($parameter, 0, 1) !== ":") {
@@ -176,21 +238,30 @@ class FDOStatement implements \Iterator
 
         $variable = $this->fdo->quote($variable, $data_type);
         $queryString = str_replace($parameter, $variable, $queryString);
-        echo $queryString;
         $this->setPreparedQueryString($queryString);
     }
 
+    /**
+     * @return string
+     */
     private function getPreparedQueryString()
     {
         return !empty($this->preparedQueryString) ? $this->preparedQueryString : $this->setPreparedQueryString($this->queryString);
     }
 
+    /**
+     * @param $queryString
+     * @return mixed
+     */
     private function setPreparedQueryString($queryString)
     {
         $this->preparedQueryString = $queryString;
         return $this->preparedQueryString;
     }
 
+    /**
+     * @return int
+     */
     public function rowCount()
     {
         return count($this->result->data);
