@@ -42,6 +42,12 @@ class FDOStatement implements \Iterator
      */
     private $mode;
 
+
+    /**
+     * @var array
+     */
+    private $debug = array();
+
     /**
      * @param FDO $fdo
      */
@@ -106,6 +112,16 @@ class FDOStatement implements \Iterator
         $this->rewind();
 
         $api = FDO::API_URL . urlencode($this->getPreparedQueryString());
+
+        if($this->fdo->getAttribute(FDO::ATTR_ACCESS_TOKEN)) {
+            $api .="&access_token=". $this->fdo->getAttribute(FDO::ATTR_ACCESS_TOKEN);
+        }
+
+        if($this->fdo->getAttribute(FDO::ATTR_BIGINT_PARSE) == FDO::BIGINT_PARSE_AS_STRING) {
+            $api .= "&format=json-strings";
+        }
+
+        $this->debug["API"] = $api;
         $this->result = $this->getResultSet($api);
 
         if(property_exists($this->result, "error")) {
@@ -155,12 +171,26 @@ class FDOStatement implements \Iterator
     }
 
     /**
-     * TODO: implement
-     * @throws FDOException
+     * Returns a single column from the next row of a result set
+     *
+     * @param string|int $column Column name or column index
+     * @return mixed
      */
-    function fetchColumn()
+    function fetchColumn($column = 0)
     {
-        throw new FDOException("Not yet implemented");
+        if($this->valid()) {
+            if(is_int($column)) {
+                $row = array_values($this->fetch(FDO::FETCH_ASSOC));
+                $result = $row[$column];
+            } else {
+                $row = $this->fetch(FDO::FETCH_ASSOC);
+                $result = $row[$column];
+            }
+        } else {
+            $result = null;
+        }
+
+        return $result;
     }
 
     /**
@@ -284,6 +314,14 @@ class FDOStatement implements \Iterator
     private function setPreparedQueryString($queryString)
     {
         $this->preparedQueryString = $queryString;
+        $this->debug["FQL"] = $queryString;
         return $this->preparedQueryString;
+    }
+
+    public function debugDumpParams()
+    {
+        foreach($this->debug as $key => $value) {
+            echo $key ." ". $value . PHP_EOL;
+        }
     }
 }

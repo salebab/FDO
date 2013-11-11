@@ -20,6 +20,7 @@ class FDO
     const PARAM_BOOL = 0;
     const PARAM_INT = 1;
     const PARAM_STR = 2;
+    const PARAM_FUNC = 3;
 
     const FETCH_JSON = 0;
     const FETCH_ASSOC = 1;
@@ -27,13 +28,20 @@ class FDO
     const FETCH_INTO = 3;
     const FETCH_OBJ = 4;
 
+    const BIGINT_PARSE_AUTO = 0;
+    const BIGINT_PARSE_REGULAR = 1;
+    const BIGINT_PARSE_AS_STRING = 2;
+
     const ATTR_DEFAULT_FETCH_MODE = 1;
+    const ATTR_ACCESS_TOKEN = 2;
+    const ATTR_BIGINT_PARSE = 3;
 
     /**
      * @var array
      */
     private $attr = array(
-        self::ATTR_DEFAULT_FETCH_MODE => self::FETCH_ASSOC
+        self::ATTR_DEFAULT_FETCH_MODE => self::FETCH_ASSOC,
+        self::ATTR_BIGINT_PARSE => self::BIGINT_PARSE_AUTO
     );
 
     /**
@@ -42,7 +50,7 @@ class FDO
      */
     function __construct($access_token = null, $attributes = array())
     {
-        $this->access_token = $access_token;
+        $this->setAttribute(self::ATTR_ACCESS_TOKEN, $access_token);
 
         if(!empty($attributes)) {
             $this->attr = array_merge($this->attr, $attributes);
@@ -87,6 +95,10 @@ class FDO
 
             case FDO::PARAM_INT:
                 $string = (int) $string;
+                $result = $string;
+                break;
+
+            case FDO::PARAM_FUNC:
                 $result = $string;
                 break;
 
