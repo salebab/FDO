@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Facebook Data Objects (FDO) by salebab</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Facebook Data Objects (FDO)</h1>
+        <p>Facebook Data Objects - querying Facebook Graph API with FQL made easy. Like PDO interface, but for FQL.</p>
+
+        <p class="view"><a href="https://github.com/salebab/FDO">View the Project on GitHub <small>salebab/FDO</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/salebab/FDO/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/salebab/FDO/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/salebab/FDO">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="fdo---facebook-data-object" class="anchor" href="#fdo---facebook-data-object"><span class="octicon octicon-link"></span></a>FDO - Facebook Data Object</h1>
+
+<p>The <em><strong>Facebook Data Object</strong></em> (FDO) is a simple interface for querying data from Facebook Graph API using <strong>FQL (Facebook Query Language)</strong>. It uses CURL for querying.</p>
+
+<p><em>FDO interface is very similar to PDO, since PDO has a very understandable methods and majority of PHP developers are very familiar with them.</em></p>
+
+<h2>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
+
+<p><strong>Fetch a single user object</strong></p>
+
+<div class="highlight highlight-php"><pre><span class="k">use</span> <span class="nx">fdo\FDO</span><span class="p">;</span>
+<span class="nv">$fdo</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">FDO</span><span class="p">();</span>
+
+<span class="nv">$fql</span> <span class="o">=</span> <span class="s2">"SELECT uid, name, sex FROM user WHERE uid = :uid"</span><span class="p">;</span>
+<span class="nv">$stmt</span> <span class="o">=</span> <span class="nv">$fdo</span><span class="o">-&gt;</span><span class="na">prepare</span><span class="p">(</span><span class="nv">$fql</span><span class="p">);</span>
+<span class="nv">$stmt</span><span class="o">-&gt;</span><span class="na">bindValue</span><span class="p">(</span><span class="s2">":uid"</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="nx">FDO</span><span class="o">::</span><span class="na">PARAM_INT</span><span class="p">);</span>
+<span class="nv">$stmt</span><span class="o">-&gt;</span><span class="na">execute</span><span class="p">();</span>
+<span class="nv">$result</span> <span class="o">=</span> <span class="nv">$stmt</span><span class="o">-&gt;</span><span class="na">fetch</span><span class="p">(</span><span class="nx">FDO</span><span class="o">::</span><span class="na">FETCH_OBJ</span><span class="p">);</span>
+<span class="nb">var_dump</span><span class="p">(</span><span class="nv">$result</span><span class="p">);</span>
+</pre></div>
+
+<p><strong>Fetch single column, fetch collection</strong></p>
+
+<div class="highlight highlight-php"><pre><span class="k">use</span> <span class="nx">fdo\FDO</span><span class="p">;</span>
+<span class="nv">$fdo</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">FDO</span><span class="p">(</span><span class="nv">$access_token</span><span class="p">);</span> <span class="c1">// Provide an active access_token</span>
+
+<span class="c1">// Count friends</span>
+<span class="nv">$fql</span> <span class="o">=</span> <span class="s2">"SELECT friend_count FROM user WHERE uid = me()"</span><span class="p">;</span>
+<span class="k">echo</span> <span class="s2">"Count friends: "</span><span class="o">.</span> <span class="nv">$fdo</span><span class="o">-&gt;</span><span class="na">query</span><span class="p">(</span><span class="nv">$fql</span><span class="p">)</span><span class="o">-&gt;</span><span class="na">fetchColumn</span><span class="p">();</span>
+
+<span class="c1">// List me and all of my friends</span>
+<span class="nv">$fql</span> <span class="o">=</span> <span class="s2">"SELECT uid, name FROM user WHERE uid = :me OR uid IN (SELECT uid2 FROM friend WHERE uid1 = :me) ORDER BY name"</span><span class="p">;</span>
+<span class="nv">$stmt</span> <span class="o">=</span> <span class="nv">$fdo</span><span class="o">-&gt;</span><span class="na">prepare</span><span class="p">(</span><span class="nv">$fql</span><span class="p">);</span>
+<span class="nv">$stmt</span><span class="o">-&gt;</span><span class="na">bindValue</span><span class="p">(</span><span class="s2">":me"</span><span class="p">,</span> <span class="s2">"me()"</span><span class="p">,</span> <span class="nx">FDO</span><span class="o">::</span><span class="na">PARAM_FUNC</span><span class="p">);</span>
+<span class="nv">$stmt</span><span class="o">-&gt;</span><span class="na">execute</span><span class="p">();</span>
+<span class="k">echo</span> <span class="s2">"Friends:"</span><span class="o">.</span> <span class="nx">PHP_EOL</span><span class="p">;</span>
+<span class="k">echo</span> <span class="nb">str_pad</span><span class="p">(</span><span class="s2">"num"</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="nx">STR_PAD_LEFT</span><span class="p">)</span> <span class="o">.</span> <span class="s2">" "</span><span class="o">.</span> <span class="nb">str_pad</span><span class="p">(</span><span class="s2">"uid"</span><span class="p">,</span> <span class="mi">22</span><span class="p">)</span> <span class="o">.</span> <span class="s2">"name"</span> <span class="o">.</span> <span class="nx">PHP_EOL</span><span class="p">;</span>
+<span class="nv">$i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="k">while</span><span class="p">(</span><span class="nv">$friend</span> <span class="o">=</span> <span class="nv">$stmt</span><span class="o">-&gt;</span><span class="na">fetch</span><span class="p">(</span><span class="nx">FDO</span><span class="o">::</span><span class="na">FETCH_OBJ</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">echo</span> <span class="nb">str_pad</span><span class="p">(</span><span class="o">++</span><span class="nv">$i</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="nx">STR_PAD_LEFT</span><span class="p">)</span> <span class="o">.</span> <span class="s2">" "</span> <span class="o">.</span> <span class="nb">str_pad</span><span class="p">(</span><span class="nv">$friend</span><span class="o">-&gt;</span><span class="na">uid</span><span class="p">,</span> <span class="mi">22</span><span class="p">)</span> <span class="o">.</span> <span class="nv">$friend</span><span class="o">-&gt;</span><span class="na">name</span> <span class="o">.</span> <span class="nx">PHP_EOL</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+<p><strong>Important notice:</strong> The library is still in a heavy development and some planed functionality is not implement yet. Please contribute if you think that the library is useful.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/salebab">salebab</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
