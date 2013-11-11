@@ -10,17 +10,12 @@ namespace fdo;
  */
 class FDOStatement implements \Iterator
 {
+
+
     /**
      * @var string
      */
     public $queryString;
-
-    /**
-     * Copy of $queryString, used for binding and processing
-     * $queryString is untouched
-     * @var string
-     */
-    private $preparedQueryString;
 
     /**
      * @var \stdClass
@@ -42,6 +37,10 @@ class FDOStatement implements \Iterator
      */
     private $mode;
 
+    /**
+     * @var array
+     */
+    private $params = array();
 
     /**
      * @var array
@@ -85,24 +84,12 @@ class FDOStatement implements \Iterator
      */
     function bindValue($parameter, $value, $data_type = FDO::PARAM_STR)
     {
-        $queryString = $this->getPreparedQueryString();
         $value = $this->fdo->quote($value, $data_type);
 
-        if(is_string($parameter)) {
-            if(substr($parameter, 0, 1) !== ":") {
-                $parameter = ":". $parameter;
-            }
-            // check if exists
-            if(strpos($queryString, $parameter) === false) {
-                throw new FDOException("Parameter $parameter not found in the statement.");
-            }
-            $queryString = str_replace($parameter, $value, $queryString);
+        if(is_string($parameter) && substr($parameter, 0, 1) !== ":") {
+            $parameter = ":". $parameter;
         }
-        elseif(is_int($parameter)) {
-            throw new FDOException("Question marks are not yet supported. Please contribute.");
-        }
-
-        $this->setPreparedQueryString($queryString);
+        $this->params[$parameter] = $value;
     }
 
     /**
@@ -122,9 +109,7 @@ class FDOStatement implements \Iterator
      */
     function execute()
     {
-        $this->rewind();
-
-        $api = FDO::API_URL . urlencode($this->getPreparedQueryString());
+        $api = FDO::API_URL . urlencode($this->getQueryString());
 
         if($this->fdo->getAttribute(FDO::ATTR_ACCESS_TOKEN)) {
             $api .="&access_token=". $this->fdo->getAttribute(FDO::ATTR_ACCESS_TOKEN);
@@ -145,8 +130,9 @@ class FDOStatement implements \Iterator
             throw new FDOException("There is no data object in result set");
         }
 
-        // reset statement
-        $this->setPreparedQueryString($this->queryString);
+        // reset
+        $this->params = array();
+        $this->rewind();
     }
 
     /**
@@ -313,23 +299,27 @@ class FDOStatement implements \Iterator
     }
 
     /**
-     * @return string
+     * Builds and returns queryString with bind params
+     * @return mixed|string
      */
-    private function getPreparedQueryString()
+    private function getQueryString()
     {
-        return !empty($this->preparedQueryString) ? $this->preparedQueryString : $this->setPreparedQueryString($this->queryString);
+        $queryString = $this->queryString;
+
+        if(!empty($this->params)) {
+            ksort($this->params);
+
+            if(strpos($queryString, "?")) {
+                // question mark placeholders
+                $queryString = vsprintf(str_replace("?", "%s", $queryString), $this->params);
+            } else {
+                // named params
+                $queryString = str_replace(array_keys($this->params), array_values($this->params), $queryString);
+            }
+        }
+        return $queryString;
     }
 
-    /**
-     * @param $queryString
-     * @return mixed
-     */
-    private function setPreparedQueryString($queryString)
-    {
-        $this->preparedQueryString = $queryString;
-        $this->debug["FQL"] = $queryString;
-        return $this->preparedQueryString;
-    }
 
     public function debugDumpParams()
     {
