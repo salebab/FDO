@@ -21,6 +21,7 @@ class FDO
     const PARAM_INT = 1;
     const PARAM_STR = 2;
     const PARAM_FUNC = 3;
+    const PARAM_SUB_QUERY = 4;
 
     const FETCH_JSON = 0;
     const FETCH_ASSOC = 1;
@@ -99,6 +100,7 @@ class FDO
                 break;
 
             case FDO::PARAM_FUNC:
+            case FDO::PARAM_SUB_QUERY:
                 $result = $string;
                 break;
 

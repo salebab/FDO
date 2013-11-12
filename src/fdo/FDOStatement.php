@@ -114,6 +114,9 @@ class FDOStatement implements \Iterator
     function execute()
     {
         $queryString = $this->getQueryString();
+        $this->debug["PREPARED"] = $this->queryString;
+        $this->debug["QUERY"] = $queryString;
+
         $api = FDO::API_URL . urlencode($queryString);
 
         if($this->fdo->getAttribute(FDO::ATTR_ACCESS_TOKEN)) {
@@ -124,9 +127,7 @@ class FDOStatement implements \Iterator
             $api .= "&format=json-strings";
         }
 
-        $this->debug["FQL"] = $this->queryString;
         $this->debug["API"] = $api;
-
         $this->result = $this->getResultSet($api);
 
         if(property_exists($this->result, "error")) {
@@ -309,7 +310,7 @@ class FDOStatement implements \Iterator
      * Builds and returns queryString with bind params
      * @return mixed|string
      */
-    private function getQueryString()
+    function getQueryString()
     {
         $queryString = $this->queryString;
 
