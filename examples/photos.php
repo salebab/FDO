@@ -10,11 +10,14 @@ $fdo = new FDO("", array(
     FDO::ATTR_BIGINT_PARSE => FDO::BIGINT_PARSE_AS_STRING // for 32bit OS
 ));
 
-$fql = "SELECT object_id, comment_info FROM photo WHERE owner = ? LIMIT 5";
+$fql = "SELECT object_id, comment_info FROM photo WHERE owner = ? OR owner = ? LIMIT 5";
 
 $stmt = $fdo->prepare($fql);
 
 $stmt->bindValue(1, "19292868552", FDO::PARAM_STR);
+$stmt->bindValue(2, "19292868552", FDO::PARAM_STR);
 $stmt->execute();
+
+$stmt->debugDumpParams();
 
 print_r($stmt->fetchAll());

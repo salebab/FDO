@@ -84,12 +84,16 @@ class FDOStatement implements \Iterator
      */
     function bindValue($parameter, $value, $data_type = FDO::PARAM_STR)
     {
+        $this->debug["Parameter " . $parameter] = $value . " : ";
+
         $value = $this->fdo->quote($value, $data_type);
+        $this->debug["Parameter " . $parameter] .= $value;
 
         if(is_string($parameter) && substr($parameter, 0, 1) !== ":") {
             $parameter = ":". $parameter;
         }
         $this->params[$parameter] = $value;
+
     }
 
     /**
@@ -109,7 +113,8 @@ class FDOStatement implements \Iterator
      */
     function execute()
     {
-        $api = FDO::API_URL . urlencode($this->getQueryString());
+        $queryString = $this->getQueryString();
+        $api = FDO::API_URL . urlencode($queryString);
 
         if($this->fdo->getAttribute(FDO::ATTR_ACCESS_TOKEN)) {
             $api .="&access_token=". $this->fdo->getAttribute(FDO::ATTR_ACCESS_TOKEN);
@@ -119,7 +124,9 @@ class FDOStatement implements \Iterator
             $api .= "&format=json-strings";
         }
 
+        $this->debug["FQL"] = $this->queryString;
         $this->debug["API"] = $api;
+
         $this->result = $this->getResultSet($api);
 
         if(property_exists($this->result, "error")) {
@@ -321,10 +328,13 @@ class FDOStatement implements \Iterator
     }
 
 
+    /**
+     *  Dump an SQL prepared command
+     */
     public function debugDumpParams()
     {
         foreach($this->debug as $key => $value) {
-            echo $key ." ". $value . PHP_EOL;
+            echo $key .": ". $value . PHP_EOL;
         }
     }
 }
