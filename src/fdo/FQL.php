@@ -37,9 +37,15 @@ class FQL
         "max_limit" => 0
     );
 
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     function __construct(FDO $fdo, LoggerInterface $logger = null)
     {
         $this->fdo = $fdo;
+        $this->logger = ($logger !== null) ? $logger : new NullLogger();
     }
 
     /**
@@ -211,6 +217,11 @@ class FQL
             }
         }
 
+        $this->logger->debug("FQL Prepared Statement", array(
+            "query" => $query,
+            "params" => $this->params
+        ));
+
         return $stmt;
     }
 
@@ -221,13 +232,7 @@ class FQL
     function execute()
     {
         $stmt = $this->prepare();
-
-        try {
-            $stmt->execute();
-        } catch(\Exception $e) {
-            $stmt->debugDumpParams();
-        }
-
+        $stmt->execute();
         return $stmt;
     }
 
