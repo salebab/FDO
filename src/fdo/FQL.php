@@ -1,13 +1,19 @@
 <?php
 namespace fdo;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
- * FQL Query Builder
+ * FQL Query Builder and helpers
+ *
  * @package fdo
  * @author Aleksandar Babic <salebab@gmail.com>
  */
 class FQL
 {
+    const AUTO_LIMIT = 'AUTO_LIMIT';
+    const DEFAULT_AUTO_LIMIT = 10;
+
     /**
      * @var FDO
      */
@@ -22,7 +28,16 @@ class FQL
     private $params = array();
     private $types = array();
 
-    function __construct(FDO $fdo)
+
+    private $autolimit = array(
+        "in_use" => 0,
+        "iteration" => 0,
+        "from" => 0,
+        "offset" => self::DEFAULT_AUTO_LIMIT,
+        "max_limit" => 0
+    );
+
+    function __construct(FDO $fdo, LoggerInterface $logger = null)
     {
         $this->fdo = $fdo;
     }
@@ -115,17 +130,38 @@ class FQL
     }
 
     /**
-     * @param int $param1
+     * @param int|string $param1 or AUTO_LIMIT
      * @param null|int $param2
      * @return $this
      */
     function limit($param1, $param2 = null)
     {
+
+        if($param1 === self::AUTO_LIMIT) {
+            $from = 0;
+            $offset = ($param2 !== null) ? $param2 : self::DEFAULT_AUTO_LIMIT;
+            $this->autolimit["in_use"] = 1;
+            $this->autolimit["offset"] = $offset;
+
+            return $this->limit($from, $offset);
+        }
+
         $this->limit = $param1;
         if($param2) {
             $this->limit .= ",".$param2;
         }
 
+        return $this;
+    }
+
+    /**
+     * Only for AUTO LIMIT mode
+     * @param $limit
+     * @return $this
+     */
+    function setMaxLimit($limit)
+    {
+        $this->autolimit["max_limit"] = $limit;
         return $this;
     }
 
@@ -193,5 +229,41 @@ class FQL
         }
 
         return $stmt;
+    }
+
+    /**
+     * Iterate trough row set and for each row provided callback will be executed, with row as param
+     *
+     * Usage:
+     * $fql->iterate(function($row) { });
+     *
+     * @param $callback
+     * @param int $mode
+     */
+    function iterate($callback, $mode = FDO::FETCH_OBJ)
+    {
+        $stmt = $this->prepare();
+        $stmt->execute();
+
+        $rowCount = $stmt->rowCount();
+
+        if(!$rowCount) {
+            return;
+        }
+
+        while($row = $stmt->fetch($mode)) {
+            call_user_func($callback, $row);
+        }
+
+        if($this->autolimit["in_use"] && $rowCount <= $this->autolimit["offset"]) {
+            $this->autolimit["from"] = $this->autolimit["from"] + $this->autolimit["offset"];
+
+            if($this->autolimit["max_limit"] <= $this->autolimit["from"]) {
+                return;
+            }
+
+            $this->limit($this->autolimit["from"], $this->autolimit["offset"]);
+            $this->iterate($callback, $mode);
+        }
     }
 } 
