@@ -217,10 +217,7 @@ class FQL
             }
         }
 
-        $this->logger->debug("FQL Prepared Statement", array(
-            "query" => $query,
-            "params" => $this->params
-        ));
+        $this->logger->debug("FQL: ". $stmt->getQueryString());
 
         return $stmt;
     }
