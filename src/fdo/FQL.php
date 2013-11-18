@@ -42,7 +42,7 @@ class FQL
      */
     private $logger;
 
-    function __construct(FDO $fdo, LoggerInterface $logger = null)
+    function __construct(FDO $fdo, $logger = null)
     {
         $this->fdo = $fdo;
         $this->logger = ($logger !== null) ? $logger : new NullLogger();
